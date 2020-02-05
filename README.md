@@ -1,5 +1,8 @@
 
 
+
+# Windows Timer 
+
 https://randomascii.wordpress.com/2013/07/08/windows-timer-resolution-megawatts-wasted/
 
 https://www.belshe.com/2010/06/04/chrome-cranking-up-the-clock/
@@ -39,3 +42,29 @@ To increase the accuracy of the time-out interval for the wait functions, call t
 https://docs.microsoft.com/fr-fr/windows/win32/api/timeapi/ns-timeapi-timecaps
 
  
+# Ray Tracing
+
+https://github.com/nvpro-samples/vk_raytracing_tutorial
+
+
+# Shaders
+
+https://antiagainst.github.io/post/hlsl-for-vulkan-resources/
+
+
+# Performance
+
+http://likebike.com/posts/How_To_Write_Fast_Rust_Code.html
+
+# RUST
+
+Examples
+
+https://doc.rust-lang.org/cargo/reference/manifest.html#examples
+
+http://xion.io/post/code/rust-examples.html
+
+Good C++ Examples
+
+This one has a fix for minimizing windows
+https://github.com/SaschaWillems/Vulkan

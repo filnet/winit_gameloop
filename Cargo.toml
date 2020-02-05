@@ -1,14 +1,14 @@
 [package]
 name = "winit_gameloop"
 version = "0.1.0"
-authors = ["Philippe <Philippe@DESKTOP-IIU0C7D>"]
+authors = ["Philippe Renon<philippe_renon@yahoo.fr>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 #winit     = "0.20.0"
-winit     = { path = "../winit", version = "0.20.0" }
+winit     = { path = "../winit" }
 
 [target.'cfg(target_os = "windows")'.dependencies.winapi]
 version = "0.3.6"
@@ -16,11 +16,11 @@ features = [
     "timeapi",
 ]
 
-[workspace]
-members = [
-    "examples",
-]
-
-[[bin]]
-name = "simple"
-path = "examples/src/bin/simple.rs"
+[dev-dependencies]
+ash = "0.29.0"
+num       = "0.2"
+cgmath    = "0.17.0"
+image     = "0.22.2"
+memoffset = "0.5.1"
+tobj      = "0.1.10"
+fps_clock = "2.0"

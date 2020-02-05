@@ -86,68 +86,109 @@ impl fmt::Display for FrameCount {
 
 // FrameRateThrottle
 
-const DEFAULT_TARGET_FPS: u32 = 60;
+//const DEFAULT_TARGET_FPS: u32 = 240;
+
+pub enum TargetFrameRate {
+    Unlimited,
+    FramePerSeconds(u32),
+}
+
+impl TargetFrameRate {
+    pub fn target_frame_duration(&self) -> time::Duration {
+        match self {
+            TargetFrameRate::Unlimited => time::Duration::from_millis(0),
+            TargetFrameRate::FramePerSeconds(fps) => {
+                time::Duration::from_nanos((NANOS_PER_SEC as f32 / *fps as f32) as u64)
+            }
+        }
+    }
+}
+
+/*trait TFrameRate
+{
+    fn target_frame_duration();
+}
+
+trait FrameRateT<T: TFrameRate> {
+    fn frame(&mut self);
+    fn wait_until(&self) -> Option<time::Instant>;
+}*/
 
 pub struct FrameRateThrottle {
-    _target_frame_per_seconds: u32,
-    target_frame_duration: time::Duration,
-    last_frame_time: time::Instant,
+    target_frame_rate: TargetFrameRate,
     started: bool,
+    //last_frame_time: time::Instant,
+    next_frame_time: time::Instant,
     wait: bool,
 }
 
 impl FrameRateThrottle {
     pub fn new() -> FrameRateThrottle {
+        //let target_frame_rate = TargetFrameRate::Unlimited;
+        let target_frame_rate = TargetFrameRate::FramePerSeconds(60);
         FrameRateThrottle {
-            _target_frame_per_seconds: DEFAULT_TARGET_FPS,
-            target_frame_duration: time::Duration::from_nanos(
-                (NANOS_PER_SEC as f32 / DEFAULT_TARGET_FPS as f32) as u64,
-            ),
-            last_frame_time: time::Instant::now(),
+            target_frame_rate,
             started: false,
+            //last_frame_time: time::Instant::now(),
+            next_frame_time: time::Instant::now(),
             wait: false,
         }
     }
 
+    pub fn set_target_frame_rate(&mut self, target_frame_rate: TargetFrameRate) {
+        self.target_frame_rate = target_frame_rate;
+    }
+
     fn start(&mut self) {
         assert!(!self.started, "frame rate throttle already started!");
-        self.last_frame_time = time::Instant::now() + self.target_frame_duration;
         self.started = true;
+        //self.last_frame_time = time::Instant::now();
+        self.next_frame_time = time::Instant::now();
         self.wait = true;
     }
 
     pub fn frame(&mut self) {
+        match self.target_frame_rate {
+            TargetFrameRate::Unlimited => return,
+            _ => {}
+        }
+
         if !self.started {
             self.start();
             return;
         }
         let now = time::Instant::now();
-        let frame_duration = now - self.last_frame_time;
-        //self.last_frame_time = self.last_frame_time + self.target_frame_duration;
-
-        //let now = time::Instant::now();
-        if frame_duration > self.target_frame_duration {
-            println!(
-                "*** SLOW (lag={:?})",
-                frame_duration - self.target_frame_duration
-            );
-            self.last_frame_time = self.last_frame_time + frame_duration;
+        if now < self.next_frame_time {
+            let dt = self.next_frame_time - now;
+            println!("!!! TOO EARLY ({:?})", dt);
+            return;
+        }
+        let frame_duration = now - self.next_frame_time;
+        let target_frame_duration = self.target_frame_rate.target_frame_duration();
+        if frame_duration > target_frame_duration {
+            let dt = frame_duration - target_frame_duration;
+            println!("*** LATE (lag={:?})", dt);
             self.wait = false;
+            self.next_frame_time = now;
         } else {
             /*println!(
-                "FAST (duration={:?}, target={:?}, sleep={:?})",
+                "*** EARLY (duration={:?}, target={:?}, sleep={:?})",
                 frame_duration,
-                self.target_frame_duration,
-                self.target_frame_duration - frame_duration
+                target_frame_duration,
+                target_frame_duration - frame_duration
             );*/
-            self.last_frame_time = self.last_frame_time + self.target_frame_duration;
             self.wait = true;
+            self.next_frame_time = self.next_frame_time + target_frame_duration;
         }
     }
 
     pub fn wait_until(&self) -> Option<time::Instant> {
+        match self.target_frame_rate {
+            TargetFrameRate::Unlimited => return None,
+            _ => {}
+        }
         if self.wait {
-            Some(self.last_frame_time)
+            Some(self.next_frame_time)
         } else {
             None
         }
