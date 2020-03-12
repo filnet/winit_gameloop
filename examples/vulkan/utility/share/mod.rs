@@ -442,7 +442,7 @@ pub fn choose_swapchain_present_mode(
 ) -> vk::PresentModeKHR {
     for &available_present_mode in available_present_modes.iter() {
         if available_present_mode == vk::PresentModeKHR::MAILBOX {
-            println!("found {:?}", available_present_mode);
+            //println!("found {:?}", available_present_mode);
             return available_present_mode;
         }
     }

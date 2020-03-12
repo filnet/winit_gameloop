@@ -68,3 +68,12 @@ Good C++ Examples
 
 This one has a fix for minimizing windows
 https://github.com/SaschaWillems/Vulkan
+
+# Vulkan
+
+https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
+
+
+# Voxel
+
+https://vercidium.com/blog/voxel-world-optimisations/

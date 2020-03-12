@@ -2,7 +2,7 @@ use std::time;
 
 use winit_gameloop::game_loop;
 
-use winit;
+use winit::event::Event;
 
 struct SimpleGame {
     window: winit::window::Window,
@@ -22,16 +22,20 @@ impl SimpleGame {
 }
 
 impl game_loop::Game for SimpleGame {
-    fn update(&mut self, t: time::Duration, dt: time::Duration) {
+    fn event<T>(&mut self, _event: &Event<'_, T>) {}
+
+    fn update(&mut self, _t: time::Duration, _dt: time::Duration) {
         //println!("UPDATE {:?} {:?}", t, dt);
     }
 
-    fn render(&mut self, lag: time::Duration, dt: time::Duration) {
+    fn render(&mut self, _lag: time::Duration, _dt: time::Duration) {
         //println!("RENDER {:?} {}", lag, dt);
     }
 
+    fn resized(&mut self) {}
+
     fn request_redraw(&self) {
-        //println!("REDRAW REQUESTED");
+        self.window.request_redraw();
     }
 
     fn destroy(&self) {}

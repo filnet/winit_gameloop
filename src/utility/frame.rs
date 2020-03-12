@@ -124,8 +124,7 @@ pub struct FrameRateThrottle {
 
 impl FrameRateThrottle {
     pub fn new() -> FrameRateThrottle {
-        //let target_frame_rate = TargetFrameRate::Unlimited;
-        let target_frame_rate = TargetFrameRate::FramePerSeconds(60);
+        let target_frame_rate = TargetFrameRate::Unlimited;        
         FrameRateThrottle {
             target_frame_rate,
             started: false,

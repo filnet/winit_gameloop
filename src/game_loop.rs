@@ -7,8 +7,10 @@ use crate::utility::frame;
 use crate::utility::timer;
 
 pub trait Game {
+    fn event<T>(&mut self, event: &Event<'_, T>);
     fn update(&mut self, t: time::Duration, dt: time::Duration);
     fn render(&mut self, lag: time::Duration, dt: time::Duration);
+    fn resized(&mut self);
     fn request_redraw(&self);
     fn destroy(&self);
 }
@@ -41,17 +43,26 @@ impl GameLoop {
 
         let mut frame_count = frame::FrameCount::new();
         let mut frame_rate_throttle = frame::FrameRateThrottle::new();
+        frame_rate_throttle.set_target_frame_rate(frame::TargetFrameRate::FramePerSeconds(60));
 
-        let mut event_count = 0;
-        let mut last_event_time = time::Instant::now();
+        // GLOBAL VARIABLES
 
-        let mut redraw = false;
-        let mut resized = false;
-        let mut minimized = false;
+        // settings
+        let redraw_on_resize = true;
 
+        // game time
         let mut last_time = time::Instant::now();
         let mut time = time::Duration::new(0, 0);
         let mut accumulator = time::Duration::new(0, 0);
+
+        // stats
+        let mut event_count = 0;
+        let mut last_event_time = time::Instant::now();
+
+        // loop variables
+        let mut invalidated = false;
+        let mut resized = false;
+        let mut minimized = false;
 
         self.event_loop.run(move |event, _, control_flow| {
             {
@@ -60,13 +71,14 @@ impl GameLoop {
                 last_event_time = now;
                 event_count += 1;
 
-                /*println!(
+                println!(
                     "EVENT {} {:?} - {:?} ({:?})",
                     event_count, event, now, _delta
-                );*/
+                );
             }
             //*control_flow = ControlFlow::Wait;
-            resized = false;
+            //resized = false;
+            game.event(&event);
             match event {
                 Event::DeviceEvent { .. } => {}
                 Event::WindowEvent { event, .. } => match event {
@@ -80,13 +92,16 @@ impl GameLoop {
                             (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
                                 *control_flow = ControlFlow::Exit
                             }
-                            _ => {}
+                            _ => {
+                            }
                         },
                     },
                     WindowEvent::Resized(new_size) => {
-                        print!("RESIZE : {:?} {}\n", new_size, redraw);
+                        print!("RESIZED : {:?} {}\n", new_size, invalidated);
                         resized = true;
                         minimized = new_size.width == 0 && new_size.height == 0;
+
+                        game.resized();
                     }
                     _ => {}
                 },
@@ -95,7 +110,8 @@ impl GameLoop {
                 Event::Resumed => {}
                 Event::NewEvents(start_cause) => {
                     //print!("START : {:?}\n", start_cause);
-                    redraw = true;
+                    invalidated = true;
+                    resized = false;
                     match start_cause {
                         StartCause::Init => {
                             last_time = time::Instant::now();
@@ -107,6 +123,7 @@ impl GameLoop {
                             start: _start,
                             requested_resume: _requested_resume,
                         } => {
+                            //print!("START : {:?}\n", start_cause);
                             if !minimized {
                                 //println!("RESUME TIME REACHED");
                             }
@@ -118,49 +135,50 @@ impl GameLoop {
                             );*/
                         }
                         StartCause::WaitCancelled { .. } => {
+                            //print!("START : {:?}\n", start_cause);
                             if !minimized {
                                 //println!("WAIT CANCELLED");
                             }
-                            redraw = false;
+                            invalidated = false;
                         }
                     }
                 }
                 Event::MainEventsCleared => {
                     // Application update code.
-                    let now = time::Instant::now();
-                    let frame_duration = now - last_time;
-                    last_time = now;
+                    if invalidated {
+                        let now = time::Instant::now();
+                        let frame_duration = now - last_time;
+                        last_time = now;
 
-                    accumulator += frame_duration;
+                        accumulator += frame_duration;
 
-                    // TODO cap the number of iterations to avoid spiral of death...
-                    while accumulator >= UPDATE_PERIOD {
-                        //previousState = currentState;
-                        game.update(/*currentState,*/ time, UPDATE_PERIOD);
-                        time += UPDATE_PERIOD;
-                        accumulator -= UPDATE_PERIOD;
+                        // TODO cap the number of iterations to avoid spiral of death...
+                        while accumulator >= UPDATE_PERIOD {
+                            //previousState = currentState;
+                            game.update(/*currentState,*/ time, UPDATE_PERIOD);
+                            time += UPDATE_PERIOD;
+                            accumulator -= UPDATE_PERIOD;
+                        }
                     }
-
+                    //println!("{} {} {}", redraw, resized, minimized);
+                    let redraw = invalidated || (redraw_on_resize && resized);
                     if redraw && !minimized {
                         // Queue a RedrawRequested event.
+                        //println!("REDRAW REQUESTED");
                         game.request_redraw();
                     }
                 }
                 Event::RedrawRequested(_) => {
-                    //assert!(!minimized, "redraw requested while minimized");
-                    // Redraw the application.
-                    if !redraw {
-                        println!("REDRAW {}", redraw);
-                    }
-                    //let alpha = 0.;
-                    //let alpha = accumulator.div_duration_f32(UPDATE_PERIOD);
-                    if !minimized {
+                    let redraw = invalidated || (redraw_on_resize && resized);
+                    if redraw && !minimized {
+                        //println!("REDRAW");
+                        //let alpha = 0.;
+                        //let alpha = accumulator.div_duration_f32(UPDATE_PERIOD);
                         game.render(accumulator, UPDATE_PERIOD);
                     }
-                    //}
                 }
                 Event::RedrawEventsCleared => {
-                    if redraw && !minimized {
+                    if invalidated && !minimized {
                         frame_count.frame();
                         frame_rate_throttle.frame();
                         match frame_rate_throttle.wait_until() {

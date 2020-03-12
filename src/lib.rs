@@ -1,5 +1,6 @@
 //#![feature(div_duration)]
 
-mod utility;
+pub mod utility;
+pub mod voxel;
 
 pub mod game_loop;

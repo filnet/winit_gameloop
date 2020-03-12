@@ -1,11 +1,14 @@
-mod utility;
+pub mod utility;
 
-use std::thread;
+pub mod voxel;
+
 use std::time;
 
 use winit_gameloop::game_loop;
 
-use winit;
+use winit::dpi::PhysicalSize;
+use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::window::Fullscreen;
 
 // the mod define some fixed functions that have been learned before.
 use utility::{constants::*, debug::*, share, structures::*};
@@ -356,7 +359,7 @@ impl VulkanGame {
             + 1;
 
         if image_size <= 0 {
-            panic!("Failed to load texture image!")
+            panic!("failed to load texture image!")
         }
 
         let (staging_buffer, staging_buffer_memory) = share::create_buffer(
@@ -1168,24 +1171,7 @@ impl VulkanGame {
                 .expect("Failed to wait for Fence!");
         }
 
-        let (image_index, _is_sub_optimal) = unsafe {
-            let result = self.swapchain_loader.acquire_next_image(
-                self.swapchain,
-                std::u64::MAX,
-                self.image_available_semaphores[self.current_frame],
-                vk::Fence::null(),
-            );
-            match result {
-                Ok(image_index) => image_index,
-                Err(vk_result) => match vk_result {
-                    vk::Result::ERROR_OUT_OF_DATE_KHR => {
-                        self.recreate_swapchain();
-                        return;
-                    }
-                    _ => panic!("Failed to acquire Swap Chain Image!"),
-                },
-            }
-        };
+        let (image_index, _is_sub_optimal) = self.acquire_next_image();
 
         self.update_uniform_buffer(image_index as usize);
 
@@ -1237,19 +1223,52 @@ impl VulkanGame {
                 .queue_present(self.present_queue, &present_info)
         };
 
-        let is_resized = match result {
+        /*let is_resized =*/
+        match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
-                vk::Result::ERROR_OUT_OF_DATE_KHR | vk::Result::SUBOPTIMAL_KHR => true,
-                _ => panic!("Failed to execute queue present."),
+                //vk::Result::ERROR_OUT_OF_DATE_KHR | vk::Result::SUBOPTIMAL_KHR => true,
+                _ => panic!("failed to execute queue present."),
             },
         };
-        if is_resized {
+        /*if is_resized {
+            println!("*** RESIZED");
+            self.is_framebuffer_resized = false;
+            self.recreate_swapchain();
+        }*/
+
+        self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    fn acquire_next_image(&mut self) -> (u32, bool) {
+        //println!("*** {}", self.is_framebuffer_resized);
+        if self.is_framebuffer_resized {
             self.is_framebuffer_resized = false;
             self.recreate_swapchain();
         }
-
-        self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+        let (image_index, is_sub_optimal) = unsafe {
+            let result = self.swapchain_loader.acquire_next_image(
+                self.swapchain,
+                std::u64::MAX,
+                self.image_available_semaphores[self.current_frame],
+                vk::Fence::null(),
+            );
+            match result {
+                Ok((image_index, is_sub_optimal)) => (image_index, is_sub_optimal),
+                Err(err) => match err {
+                    vk::Result::ERROR_OUT_OF_DATE_KHR => {
+                        //self.recreate_swapchain();
+                        panic!("swap chain is out of date!");
+                        //return;
+                    }
+                    _ => panic!("failed to acquire next image ({})!", err),
+                },
+            }
+        };
+        if is_sub_optimal {
+            println!("acquired image is suboptimal")
+        }
+        (image_index, is_sub_optimal)
     }
 
     fn recreate_swapchain(&mut self) {
@@ -1374,24 +1393,83 @@ impl VulkanGame {
         self.is_framebuffer_resized = true;
     }
 
-    fn window_ref(&self) -> &winit::window::Window {
+    /*fn window_ref(&self) -> &winit::window::Window {
         &self.window
-    }
+    }*/
 }
 
 impl game_loop::Game for VulkanGame {
-    fn update(&mut self, t: time::Duration, dt: time::Duration) {
+    fn event<T>(&mut self, event: &Event<'_, T>) {
+        match event {
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::KeyboardInput { input, .. } => match input {
+                    KeyboardInput {
+                        virtual_keycode,
+                        state,
+                        ..
+                    } => match (virtual_keycode, state) {
+                        (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                            //*control_flow = ControlFlow::Exit
+                        }
+                        (Some(VirtualKeyCode::X), ElementState::Pressed) => {
+                            fn area(size: PhysicalSize<u32>) -> u32 {
+                                size.width * size.height
+                            }
+                            let monitor = self.window.current_monitor();
+                            if let Some(mode) = monitor
+                                .video_modes()
+                                .max_by(|a, b| area(a.size()).cmp(&area(b.size())))
+                            {
+                                self.window
+                                    .set_fullscreen(Some(Fullscreen::Exclusive(mode)));
+                            } else {
+                                eprintln!("no video modes available");
+                            }
+                        }
+                        (Some(VirtualKeyCode::F), ElementState::Pressed) => {
+                            if self.window.fullscreen().is_some() {
+                                self.window.set_fullscreen(None);
+                            } else {
+                                let monitor = self.window.current_monitor();
+                                self.window
+                                    .set_fullscreen(Some(Fullscreen::Borderless(monitor)));
+                            }
+                        }
+                        (Some(VirtualKeyCode::S), ElementState::Pressed) => {
+                            let size = match self.window.inner_size().width {
+                                320 => PhysicalSize::new(640, 480),
+                                640 => PhysicalSize::new(1024, 768),
+                                //1024 => PhysicalSize::new(1280, 1024),
+                                //1280 => PhysicalSize::new(320, 240),
+                                _ => PhysicalSize::new(320, 240),
+                            };
+                            self.window.set_inner_size(size);
+                        }
+                        _ => {}
+                    },
+                },
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
+    fn update(&mut self, _t: time::Duration, dt: time::Duration) {
         //println!("UPDATE {:?} {:?}", t, dt);
         self.time += dt.as_secs_f32();
     }
 
-    fn render(&mut self, lag: time::Duration, dt: time::Duration) {
+    fn render(&mut self, lag: time::Duration, _dt: time::Duration) {
         //println!("RENDER {:?} {}", dt, alpha);
         self.lag_time = lag.as_secs_f32();
         //println!("{} {}", self.time, self.lag_time);
         self.draw_frame();
         // simulate some load
         //thread::sleep(time::Duration::from_millis(80));
+    }
+
+    fn resized(&mut self) {
+        self.resize_framebuffer();
     }
 
     fn request_redraw(&self) {
@@ -1405,6 +1483,17 @@ impl game_loop::Game for VulkanGame {
 }
 
 fn main() {
+    // let chunk = voxel::chunk::Chunk::new();
+    // let mut c = 0;
+    // for voxel in chunk.into_iter() {
+    //     c += 1;
+    // }
+    // for voxel in chunk.into_iter() {
+    //     c += 1;
+    // }
+    // println!("{}", c);
+    // std::process::exit(0);
+
     let game_loop = game_loop::GameLoop::new();
 
     let vulkan_app = VulkanGame::new(&game_loop);
