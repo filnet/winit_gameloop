@@ -62,7 +62,7 @@ impl FrameCount {
 
         // make sure to add frame duration
         // and not time::Instant::now() as time moves on...
-        self.last_frame_time = self.last_frame_time + frame_duration;
+        self.last_frame_time += frame_duration;
     }
 
     pub fn frame_count(&self) -> u64 {
@@ -122,9 +122,21 @@ pub struct FrameRateThrottle {
     wait: bool,
 }
 
+impl Default for FrameRateThrottle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for FrameCount {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FrameRateThrottle {
     pub fn new() -> FrameRateThrottle {
-        let target_frame_rate = TargetFrameRate::Unlimited;        
+        let target_frame_rate = TargetFrameRate::Unlimited;
         FrameRateThrottle {
             target_frame_rate,
             started: false,
@@ -147,11 +159,9 @@ impl FrameRateThrottle {
     }
 
     pub fn frame(&mut self) {
-        match self.target_frame_rate {
-            TargetFrameRate::Unlimited => return,
-            _ => {}
+        if let TargetFrameRate::Unlimited = self.target_frame_rate {
+            return;
         }
-
         if !self.started {
             self.start();
             return;
@@ -177,14 +187,13 @@ impl FrameRateThrottle {
                 target_frame_duration - frame_duration
             );*/
             self.wait = true;
-            self.next_frame_time = self.next_frame_time + target_frame_duration;
+            self.next_frame_time += target_frame_duration;
         }
     }
 
     pub fn wait_until(&self) -> Option<time::Instant> {
-        match self.target_frame_rate {
-            TargetFrameRate::Unlimited => return None,
-            _ => {}
+        if let TargetFrameRate::Unlimited = self.target_frame_rate {
+            return None;
         }
         if self.wait {
             Some(self.next_frame_time)

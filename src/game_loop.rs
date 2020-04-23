@@ -15,6 +15,7 @@ pub trait Game {
     fn destroy(&self);
 }
 
+#[derive(Default)]
 pub struct GameLoop {
     event_loop: winit::event_loop::EventLoop<()>,
 }
@@ -71,10 +72,10 @@ impl GameLoop {
                 last_event_time = now;
                 event_count += 1;
 
-                println!(
+                /*println!(
                     "EVENT {} {:?} - {:?} ({:?})",
                     event_count, event, now, _delta
-                );
+                );*/
             }
             //*control_flow = ControlFlow::Wait;
             //resized = false;
@@ -88,16 +89,16 @@ impl GameLoop {
                             virtual_keycode,
                             state,
                             ..
-                        } => match (virtual_keycode, state) {
-                            (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                        } => {
+                            if let (Some(VirtualKeyCode::Escape), ElementState::Pressed) =
+                                (virtual_keycode, state)
+                            {
                                 *control_flow = ControlFlow::Exit
                             }
-                            _ => {
-                            }
-                        },
+                        }
                     },
                     WindowEvent::Resized(new_size) => {
-                        print!("RESIZED : {:?} {}\n", new_size, invalidated);
+                        println!("RESIZED : {:?} {}", new_size, invalidated);
                         resized = true;
                         minimized = new_size.width == 0 && new_size.height == 0;
 
@@ -109,7 +110,7 @@ impl GameLoop {
                 Event::Suspended => {}
                 Event::Resumed => {}
                 Event::NewEvents(start_cause) => {
-                    //print!("START : {:?}\n", start_cause);
+                    //println!("START : {:?}", start_cause);
                     invalidated = true;
                     resized = false;
                     match start_cause {
@@ -123,7 +124,7 @@ impl GameLoop {
                             start: _start,
                             requested_resume: _requested_resume,
                         } => {
-                            //print!("START : {:?}\n", start_cause);
+                            //println!("START : {:?}", start_cause);
                             if !minimized {
                                 //println!("RESUME TIME REACHED");
                             }
@@ -135,7 +136,7 @@ impl GameLoop {
                             );*/
                         }
                         StartCause::WaitCancelled { .. } => {
-                            //print!("START : {:?}\n", start_cause);
+                            //println!("START : {:?}", start_cause);
                             if !minimized {
                                 //println!("WAIT CANCELLED");
                             }

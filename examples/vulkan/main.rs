@@ -1,7 +1,5 @@
 pub mod utility;
 
-pub mod voxel;
-
 use std::time;
 
 use winit_gameloop::game_loop;

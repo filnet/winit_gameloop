@@ -73,6 +73,7 @@ https://github.com/SaschaWillems/Vulkan
 
 https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
 
+https://community.arm.com/developer/tools-software/graphics/b/blog/posts/vulkan-best-practices-frequently-asked-questions-part-1
 
 # Voxel
 
