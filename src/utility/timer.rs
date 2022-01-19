@@ -1,5 +1,4 @@
 use std::cmp;
-use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::mem;
 use std::time;
@@ -15,10 +14,7 @@ pub fn timer_resolution() -> (time::Duration, time::Duration) {
             wPeriodMin: 0,
             wPeriodMax: 0,
         };
-        match timeapi::timeGetDevCaps(
-            &mut time_caps,
-            u32::try_from(mem::size_of::<mmsystem::TIMECAPS>()).unwrap(),
-        ) {
+        match timeapi::timeGetDevCaps(&mut time_caps, mem::size_of::<mmsystem::TIMECAPS>() as _) {
             mmsystem::MMSYSERR_NOERROR => {
                 /*println!(
                     "Time caps: min {}ms, max {}ms",
@@ -49,7 +45,7 @@ pub fn set_timer_max_resolution() -> time::Duration {
 
 pub fn set_timer_resolution(target_period: time::Duration) -> time::Duration {
     unsafe {
-        if CURRENT_PERIOD != None {
+        if CURRENT_PERIOD.is_some() {
             panic!("unbalanced timer resolution change");
         }
         let (min_period, max_period) = timer_resolution();

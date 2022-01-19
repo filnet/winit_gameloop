@@ -11,8 +11,6 @@ use winit::window::Fullscreen;
 // the mod define some fixed functions that have been learned before.
 use utility::{constants::*, debug::*, share, structures::*};
 
-use ash::version::DeviceV1_0;
-use ash::version::InstanceV1_0;
 use ash::vk;
 
 use cgmath::{Deg, Matrix4, Point3, Vector3};
@@ -95,8 +93,7 @@ struct VulkanGame {
 
     is_framebuffer_resized: bool,
 
-    time: f32,
-    lag_time: f32,
+    time: time::Duration,
 }
 
 impl VulkanGame {
@@ -112,7 +109,7 @@ impl VulkanGame {
             .expect("Failed to create window.");
 
         // init vulkan stuff
-        let entry = ash::Entry::new().unwrap();
+        let entry = ash::Entry::new();
         let instance = share::create_instance(
             &entry,
             WINDOW_TITLE,
@@ -326,8 +323,7 @@ impl VulkanGame {
 
             is_framebuffer_resized: false,
 
-            time: 0.,
-            lag_time: 0.,
+            time: time::Duration::from_millis(0),
         }
     }
 
@@ -884,7 +880,10 @@ impl VulkanGame {
 
         let color_blend_attachment_states = [vk::PipelineColorBlendAttachmentState {
             blend_enable: vk::FALSE,
-            color_write_mask: vk::ColorComponentFlags::all(),
+            color_write_mask: vk::ColorComponentFlags::R
+                | vk::ColorComponentFlags::G
+                | vk::ColorComponentFlags::B
+                | vk::ColorComponentFlags::A,
             src_color_blend_factor: vk::BlendFactor::ONE,
             dst_color_blend_factor: vk::BlendFactor::ZERO,
             color_blend_op: vk::BlendOp::ADD,
@@ -1077,10 +1076,10 @@ impl VulkanGame {
         command_buffers
     }
 
-    fn update_uniform_buffer(&mut self, current_image: usize) {
+    fn update_uniform_buffer(&mut self, current_image: usize, time: time::Duration) {
         self.uniform_transform.model = Matrix4::from_axis_angle(
             Vector3::new(0.0, 0.0, 1.0),
-            Deg(90.0) * (self.time + self.lag_time) * 0.6,
+            Deg(90.0) * time.as_secs_f32() * 0.6,
         ) * Matrix4::from_angle_z(Deg(90.0)); //self.uniform_transform.model;
 
         //Matrix4::from_angle_z(Deg(90.0)),
@@ -1171,7 +1170,7 @@ impl VulkanGame {
 
         let (image_index, _is_sub_optimal) = self.acquire_next_image();
 
-        self.update_uniform_buffer(image_index as usize);
+        self.update_uniform_buffer(image_index as usize, self.time);
 
         let wait_semaphores = [self.image_available_semaphores[self.current_frame]];
         let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
@@ -1413,7 +1412,10 @@ impl game_loop::Game for VulkanGame {
                             fn area(size: PhysicalSize<u32>) -> u32 {
                                 size.width * size.height
                             }
-                            let monitor = self.window.current_monitor();
+                            let monitor = self
+                                .window
+                                .current_monitor()
+                                .expect("Failed to get current monitor!");
                             if let Some(mode) = monitor
                                 .video_modes()
                                 .max_by(|a, b| area(a.size()).cmp(&area(b.size())))
@@ -1452,14 +1454,19 @@ impl game_loop::Game for VulkanGame {
         }
     }
 
-    fn update(&mut self, _t: time::Duration, dt: time::Duration) {
+    fn update_fixed_step(&mut self, _time: time::Duration, _dt: time::Duration) {
         //println!("UPDATE {:?} {:?}", t, dt);
-        self.time += dt.as_secs_f32();
+        //self.time += dt.as_secs_f32();
     }
 
-    fn render(&mut self, lag: time::Duration, _dt: time::Duration) {
+    fn update(&mut self, time: time::Duration) {
+        //println!("UPDATE {:?} {:?}", t, dt);
+        self.time = time;
+    }
+
+    fn render(&mut self) {
         //println!("RENDER {:?} {}", dt, alpha);
-        self.lag_time = lag.as_secs_f32();
+        //self.lag_time = lag.as_secs_f32();
         //println!("{} {}", self.time, self.lag_time);
         self.draw_frame();
         // simulate some load
@@ -1477,6 +1484,9 @@ impl game_loop::Game for VulkanGame {
 
     fn destroy(&self) {
         self.wait_device_idle();
+    }
+
+    fn stats(&self, _game_stats: &game_loop::GameStats) {
     }
 }
 

@@ -56,7 +56,7 @@ impl FrameCount {
         // total average
         //TODO
 
-        if self.frame_count % 100 == 0 {
+        if false &&  self.frame_count % 100 == 0 {
             println!("{}", self);
         }
 

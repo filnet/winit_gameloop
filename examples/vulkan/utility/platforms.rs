@@ -1,4 +1,3 @@
-use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
 
 #[cfg(target_os = "windows")]
@@ -109,9 +108,9 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
 }
 
 #[cfg(target_os = "windows")]
-pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
-    entry: &E,
-    instance: &I,
+pub unsafe fn create_surface(
+    entry: &ash::Entry,
+    instance: &ash::Instance,
     window: &winit::window::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
     use std::os::raw::c_void;

@@ -7,21 +7,23 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#winit     = "0.22.0"
-winit     = { path = "../winit" }
-#winit     = { git = "https://github.com/rust-windowing/winit" }
+winit = "0.26.0"
+#winit = { path = "../winit" }
+
+backtrace = "0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies.winapi]
-version = "0.3.6"
-features = [
-    "timeapi",
-]
+version = "0.3.9"
+#features = [
+#    "timeapi",
+#]
 
 [dev-dependencies]
-ash       = "0.29.0"
-num       = "0.2"
-cgmath    = "0.17.0"
-image     = "0.22.2"
+#ash = "0.35"
+ash = { path = "../ash/ash" }
+num = "0.2"
+cgmath = "0.17.0"
+image = "0.22.2"
 memoffset = "0.5.1"
-tobj      = "0.1.10"
-fps_clock = "2.0"
+tobj = "0.1.10"
+#fps_clock = "2.0"

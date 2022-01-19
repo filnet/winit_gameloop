@@ -24,11 +24,15 @@ impl SimpleGame {
 impl game_loop::Game for SimpleGame {
     fn event<T>(&mut self, _event: &Event<'_, T>) {}
 
-    fn update(&mut self, _t: time::Duration, _dt: time::Duration) {
+    fn update_fixed_step(&mut self, _time: time::Duration, _dt: time::Duration) {
         //println!("UPDATE {:?} {:?}", t, dt);
     }
 
-    fn render(&mut self, _lag: time::Duration, _dt: time::Duration) {
+    fn update(&mut self, _time: time::Duration) {
+        //println!("UPDATE {:?} {:?}", t, dt);
+    }
+
+    fn render(&mut self) {
         //println!("RENDER {:?} {}", lag, dt);
     }
 
@@ -39,6 +43,8 @@ impl game_loop::Game for SimpleGame {
     }
 
     fn destroy(&self) {}
+
+    fn stats(&self, _game_stats: &game_loop::GameStats) {}
 }
 
 fn main() {
