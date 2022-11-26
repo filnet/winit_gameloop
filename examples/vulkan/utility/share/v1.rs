@@ -975,14 +975,7 @@ pub fn create_texture_image(
     let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
     image_object = image_object.flipv();
     let (image_width, image_height) = (image_object.width(), image_object.height());
-    let image_data = match &image_object {
-        image::DynamicImage::ImageBgr8(_)
-        | image::DynamicImage::ImageLuma8(_)
-        | image::DynamicImage::ImageRgb8(_) => image_object.to_rgba().into_raw(),
-        image::DynamicImage::ImageBgra8(_)
-        | image::DynamicImage::ImageLumaA8(_)
-        | image::DynamicImage::ImageRgba8(_) => image_object.raw_pixels(),
-    };
+    let image_data = image_object.into_rgba8();
     let image_size =
         (::std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
 

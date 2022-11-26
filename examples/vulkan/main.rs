@@ -1,7 +1,6 @@
 pub mod utility;
 
 use std::time;
-
 use winit_gameloop::game_loop;
 
 use winit::dpi::PhysicalSize;
@@ -109,7 +108,7 @@ impl VulkanGame {
             .expect("Failed to create window.");
 
         // init vulkan stuff
-        let entry = ash::Entry::new();
+        let entry = unsafe { ash::Entry::load().expect("Failed to load ash!") };
         let instance = share::create_instance(
             &entry,
             WINDOW_TITLE,
@@ -337,14 +336,7 @@ impl VulkanGame {
         let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
         image_object = image_object.flipv();
         let (image_width, image_height) = (image_object.width(), image_object.height());
-        let image_data = match &image_object {
-            image::DynamicImage::ImageBgr8(_)
-            | image::DynamicImage::ImageLuma8(_)
-            | image::DynamicImage::ImageRgb8(_) => image_object.to_rgba().into_raw(),
-            image::DynamicImage::ImageBgra8(_)
-            | image::DynamicImage::ImageLumaA8(_)
-            | image::DynamicImage::ImageRgba8(_) => image_object.raw_pixels(),
-        };
+        let image_data = image_object.into_rgba8();
         let image_size =
             (::std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
         let mip_levels = ((::std::cmp::max(image_width, image_height) as f32)
@@ -1396,6 +1388,9 @@ impl VulkanGame {
 }
 
 impl game_loop::Game for VulkanGame {
+    fn init(&mut self) {}
+    fn start(&mut self) {}
+
     fn event<T>(&mut self, event: &Event<'_, T>) {
         match event {
             Event::WindowEvent { event, .. } => match event {
@@ -1486,8 +1481,7 @@ impl game_loop::Game for VulkanGame {
         self.wait_device_idle();
     }
 
-    fn stats(&self, _game_stats: &game_loop::GameStats) {
-    }
+    fn stats(&self, _game_stats: &game_loop::GameStats) {}
 }
 
 fn main() {

@@ -9,6 +9,7 @@ use crate::utility::frame;
 
 pub trait Game {
     fn init(&mut self);
+    fn start(&mut self);
     fn event<T>(&mut self, event: &Event<'_, T>);
     fn update_fixed_step(&mut self, time: time::Duration, dt: time::Duration);
     fn update(&mut self, time: time::Duration);
@@ -126,7 +127,7 @@ impl GameLoop {
 
         // game state
         let mut state = GameState {
-            // frame 
+            // frame
             frame_count: 0,
             last_frame_time: None,
             time: time::Duration::new(0, 0),
@@ -198,11 +199,10 @@ impl GameLoop {
                     }
                     WindowEvent::Resized(new_size) => {
                         minimized = new_size.width == 0 && new_size.height == 0;
-                        // ignore resize event while in init state
+                        // hack to ignore initial (and spurious) resize events
                         if init {
                             println!("Ignored : {:?}", event);
-                        }
-                        else {
+                        } else {
                             println!("Resized : {:?}", event);
                             /*use backtrace::Backtrace;
                             let bt = Backtrace::new();
@@ -230,21 +230,20 @@ impl GameLoop {
                         StartCause::Init => {
                             //last_time = time::Instant::now();
                             game.init();
+                            // hack to ignore initial (and spurious) resize events
                             init = true;
                             state.time = time::Duration::new(0, 0);
                             state.accumulator = time::Duration::new(0, 0);
                         }
-                        StartCause::Poll => {
-
-                        }
+                        StartCause::Poll => {}
                         StartCause::ResumeTimeReached {
                             start: _start,
                             requested_resume: _requested_resume,
                         } => {
                             //println!("START : {:?}", start_cause);
-                            if !minimized {
-                                //println!("RESUME TIME REACHED");
-                            }
+                            /*if !minimized {
+                                println!("RESUME TIME REACHED");
+                            }*/
                             /*println!(
                                 "ResumeTimeReached (requested={:?}, actual={:?}, lag={:?})",
                                 _requested_resume - _start,
@@ -260,6 +259,7 @@ impl GameLoop {
                             invalidated = false;
                         }
                     }
+                    game.start();
                 }
                 Event::MainEventsCleared => {
                     // Application update code.
@@ -278,39 +278,39 @@ impl GameLoop {
                                 state.accumulator += frame_duration;
                                 //println!("{:?} {:?}", frame_duration, accumulator);
                                 // TODO cap the number of iterations to avoid spiral of death...
-                                let mut update_count = 0;
+                                //let mut update_count = 0;
                                 while state.accumulator >= setup.update_period {
                                     // this is pointless unless we have a physics engine that prefers fixed time step (say 10ms)
                                     // currently we don't have a physics engine (and why is update_period equals to 1/60 s?)
                                     game.update_fixed_step(state.time, setup.update_period);
                                     state.time += setup.update_period;
                                     state.accumulator -= setup.update_period;
-                                    update_count += 1;
+                                    //update_count += 1;
                                 }
-                                if frame_duration > setup.update_period {
-                                    /*println!(
+                                /*if frame_duration > setup.update_period {
+                                    println!(
                                         "!!! @{} ({:?}, {:?})",
                                         state.frame_count, frame_duration, state.accumulator
-                                    );*/
-                                }
+                                    );
+                                }*/
                                 /*println!(
                                     "@{} ({:?}, {:?})",
                                     state.frame_count, frame_duration, state.accumulator
                                 );*/
-                                if update_count == 0 {
-                                    /*println!(
+                                /*if update_count == 0 {
+                                    println!(
                                         "*** skipped @{} ({:?}, {:?})",
                                         state.frame_count, frame_duration, state.accumulator
-                                    );*/
+                                    );
                                 } else if update_count >= 2 {
-                                    /*println!(
+                                    println!(
                                         "*** lagging {} @{} ({:?}, {:?})",
                                         update_count - 1,
                                         state.frame_count,
                                         frame_duration,
                                         state.accumulator
-                                    )*/
-                                }
+                                    )
+                                }*/
                                 game.update(state.time + state.accumulator);
                             }
                         };

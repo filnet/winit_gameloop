@@ -268,7 +268,8 @@ pub fn find_queue_family(
                     physical_device,
                     index as u32,
                     surface_stuff.surface,
-                ).expect("Failed to get surface suport")
+                )
+                .expect("Failed to get surface suport")
         };
         if queue_family.queue_count > 0 && is_present_support {
             queue_family_indices.present_family = Some(index);

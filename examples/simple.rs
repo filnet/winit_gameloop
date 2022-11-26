@@ -22,6 +22,10 @@ impl SimpleGame {
 }
 
 impl game_loop::Game for SimpleGame {
+    fn init(&mut self) {}
+
+    fn start(&mut self) {}
+
     fn event<T>(&mut self, _event: &Event<'_, T>) {}
 
     fn update_fixed_step(&mut self, _time: time::Duration, _dt: time::Duration) {

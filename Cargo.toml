@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winit = "0.26.0"
+winit = "0.26"
 #winit = { path = "../winit" }
 
 backtrace = "0.3"
@@ -19,11 +19,12 @@ version = "0.3.9"
 #]
 
 [dev-dependencies]
-#ash = "0.35"
-ash = { path = "../ash/ash" }
+ash = "0.37"
+#ash = { path = "../ash/ash" }
+
 num = "0.2"
-cgmath = "0.17.0"
-image = "0.22.2"
-memoffset = "0.5.1"
-tobj = "0.1.10"
+cgmath = "0.17"
+image = "0.23"
+memoffset = "0.5"
+tobj = "0.1"
 #fps_clock = "2.0"

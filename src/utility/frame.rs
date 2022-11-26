@@ -54,11 +54,7 @@ impl FrameCount {
         let total: time::Duration = self.samples.iter().sum();
         self.frame_per_seconds = NANOS_PER_SEC_F32 / (total.as_nanos() as f32 / SAMPLE_COUNT_F32);
         // total average
-        //TODO
-
-        if false &&  self.frame_count % 100 == 0 {
-            println!("{}", self);
-        }
+        // TODO
 
         // make sure to add frame duration
         // and not time::Instant::now() as time moves on...
