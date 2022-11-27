@@ -274,7 +274,8 @@ impl GameLoop {
                                 game.update(state.time);
                             }
                             Some(_last_time) => {
-                                let frame_duration = time::Duration::from_secs_f32(1.0 / 60.0); //now - last_time;
+                                //let frame_duration = time::Duration::from_secs_f32(1.0 / 60.0); //now - last_time;
+                                let frame_duration = now - state.last_frame_time.unwrap_or(now);
                                 state.accumulator += frame_duration;
                                 //println!("{:?} {:?}", frame_duration, accumulator);
                                 // TODO cap the number of iterations to avoid spiral of death...
